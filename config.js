@@ -11,9 +11,7 @@ module.exports = {
     botName: 'NOVA MD',
     botVersion: '1.0.0',
     prefix: '.',
-    sessionName: 'session',
-    sessionID: process.env.SESSION_ID || '',
-    newsletterJid: '120363406476499117@newsletter', // Newsletter JID for menu forwarding
+    newsletterJid: '120363406476499117@newsletter', // Newsletter JID for menu responding 
     updateZipUrl: 'https://github.com/thaghiskbskkns/NOVA-MD/archive/refs/heads/main.zip', // URL to latest code zip for .update command
     
     // Sticker Configuration
