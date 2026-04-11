@@ -71,6 +71,27 @@ const path = require('path');
 const zlib = require('zlib');
 const os = require('os');
 
+// =============== READ SESSION ID FROM SETTINGS.JS ===============
+let settingsConfig = {};
+try {
+  // Try to load settings.js
+  const settingsPath = path.join(process.cwd(), 'settings.js');
+  if (fs.existsSync(settingsPath)) {
+    // Clear require cache to get fresh settings
+    delete require.cache[require.resolve(settingsPath)];
+    settingsConfig = require(settingsPath);
+    console.log('✅ Loaded settings from settings.js');
+  } else {
+    console.log('⚠️ settings.js not found, using default config');
+  }
+} catch (err) {
+  console.error('❌ Error loading settings.js:', err.message);
+}
+
+// Get session ID from settings.js, fallback to config.js
+const SESSION_ID = settingsConfig.SESSION_ID || config.sessionID || null;
+// ================================================================
+
 // =============== CONFIGURATION FILES ===============
 const DATA_DIR = path.join(process.cwd(), 'data');
 const AUTOTYPING_FILE = path.join(DATA_DIR, 'autotyping.json');
@@ -314,9 +335,10 @@ async function startBot() {
   const sessionFolder = `./${config.sessionName}`;
   const sessionFile = path.join(sessionFolder, 'creds.json');
 
-  if (config.sessionID && config.sessionID.startsWith('NovaMd~')) {
+  // Use SESSION_ID from settings.js instead of config.sessionID
+  if (SESSION_ID && SESSION_ID.startsWith('NovaMd~')) {
     try {
-      const [header, b64data] = config.sessionID.split('~');
+      const [header, b64data] = SESSION_ID.split('~');
 
       if (header !== 'NovaMd' || !b64data) {
         throw new Error("❌ Invalid session format. Expected 'NovaMd~.....'");
@@ -336,6 +358,10 @@ async function startBot() {
     } catch (e) {
       console.error('📡 Session : ❌ Error processing NovaMd session:', e.message);
     }
+  } else if (SESSION_ID) {
+    console.log('📡 Session : Using session ID from settings.js');
+  } else {
+    console.log('📡 Session : No session ID provided, will generate QR code');
   }
 
   const { state, saveCreds } = await useMultiFileAuthState(sessionFolder);
