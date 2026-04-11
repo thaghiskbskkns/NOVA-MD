@@ -1,0 +1,33 @@
+/**
+ * Update Group Name Command - Change the group name
+ */
+
+const config = require('../../config');
+
+module.exports = {
+  name: 'updategname',
+  aliases: ['upgname', 'gname', 'setname'],
+  category: 'group',
+  description: 'Change the group name',
+  usage: '.gname <new group name>',
+  
+  async execute(sock, msg, args, extra) {
+    try {
+      const { isGroup, isAdmins, isBotAdmins, from, reply } = extra;
+      
+      if (!isGroup) return reply("❌ This command can only be used in groups.");
+      if (!isAdmins) return reply("❌ Only group admins can use this command.");
+      if (!isBotAdmins) return reply("❌ I need to be an admin to update the group name.");
+      
+      const newName = args.join(' ');
+      if (!newName) return reply(`❌ Please provide a new group name.\n\n📌 Usage: ${config.prefix}gname Nova MD Group`);
+
+      await sock.groupUpdateSubject(from, newName);
+      reply(`✅ Group name has been updated to: *${newName}*`);
+      
+    } catch (error) {
+      console.error("Error updating group name:", error);
+      reply("❌ Failed to update the group name. Please try again.");
+    }
+  }
+};
