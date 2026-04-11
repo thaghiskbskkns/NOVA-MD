@@ -23,7 +23,7 @@
         "@bochilteam/scraper-facebook": "^5.0.0",
         "@bochilteam/scraper-tiktok": "^5.0.0",
         "@vitalets/google-translate-api": "^9.2.1",
-        "@whiskeysockets/baileys": "https://github.com/Dark-Xploit/Baileys/archive/refs/tags/v2.1.5.tar.gz",
+        "@whiskeysockets/baileys":"npm:gifted-baileys@2.5.8",
         "acrcloud": "^1.4.0",
         "axios": "^1.7.2",
         "canvas": "^3.2.1",
