@@ -71,25 +71,27 @@ const path = require('path');
 const zlib = require('zlib');
 const os = require('os');
 
-// =============== READ SESSION ID FROM SETTINGS.JS ===============
+// =============== READ OWNER NUMBER FROM SETTINGS.JS ===============
 let settingsConfig = {};
 try {
-  // Try to load settings.js
   const settingsPath = path.join(process.cwd(), 'settings.js');
   if (fs.existsSync(settingsPath)) {
-    // Clear require cache to get fresh settings
     delete require.cache[require.resolve(settingsPath)];
     settingsConfig = require(settingsPath);
-    console.log('✅ Loaded settings from settings.js');
-  } else {
-    console.log('⚠️ settings.js not found, using default config');
+    
+    // Override owner number from settings.js if exists
+    if (settingsConfig.ownerNumber && settingsConfig.ownerNumber.length > 0) {
+      config.ownerNumber = settingsConfig.ownerNumber[0];
+    }
+    
+    // Override session ID from settings.js if exists
+    if (settingsConfig.SESSION_ID) {
+      config.sessionID = settingsConfig.SESSION_ID;
+    }
   }
 } catch (err) {
-  console.error('❌ Error loading settings.js:', err.message);
+  // Silent fail - keep using config.js values
 }
-
-// Get session ID from settings.js, fallback to config.js
-const SESSION_ID = settingsConfig.SESSION_ID || config.sessionID || null;
 // ================================================================
 
 // =============== CONFIGURATION FILES ===============
@@ -335,7 +337,9 @@ async function startBot() {
   const sessionFolder = `./${config.sessionName}`;
   const sessionFile = path.join(sessionFolder, 'creds.json');
 
-  // Use SESSION_ID from settings.js instead of config.sessionID
+  // Use SESSION_ID from settings.js
+  const SESSION_ID = config.sessionID || null;
+  
   if (SESSION_ID && SESSION_ID.startsWith('NovaMd~')) {
     try {
       const [header, b64data] = SESSION_ID.split('~');
@@ -690,7 +694,7 @@ async function startBot() {
 }
 
 // Start the bot
-console.log('\n╭──⌈ 🚀 STARTING WHATSAPP MD BOT ⌋');
+console.log('\n╭──⌈ 🚀 STARTING NOVA MD BOT ⌋');
 console.log('┃');
 console.log(`┃ 📦 Bot Name: ${config.botName}`);
 console.log(`┃ ⚡ Prefix: ${config.prefix}`);
