@@ -62,7 +62,7 @@ const {
   delay
 } = require('@whiskeysockets/baileys');
 const qrcode = require('qrcode-terminal');
-const config = require('./config');
+let config = require('./config');
 const handler = require('./handler');
 const { AntiDelete } = require('./utils/antidelete');
 const { loadCommands } = require('./utils/commandLoader');
@@ -79,18 +79,20 @@ try {
     delete require.cache[require.resolve(settingsPath)];
     settingsConfig = require(settingsPath);
     
-    // Override owner number from settings.js if exists
-    if (settingsConfig.ownerNumber && settingsConfig.ownerNumber.length > 0) {
-      config.ownerNumber = settingsConfig.ownerNumber[0];
+    // Override owner number from settings.js - KEEP AS ARRAY to maintain compatibility
+    if (settingsConfig.ownerNumber && Array.isArray(settingsConfig.ownerNumber) && settingsConfig.ownerNumber.length > 0) {
+      config.ownerNumber = settingsConfig.ownerNumber; // Keep as array
+      console.log(`✅ Owner number loaded from settings.js: ${config.ownerNumber[0]}`);
     }
     
     // Override session ID from settings.js if exists
     if (settingsConfig.SESSION_ID) {
       config.sessionID = settingsConfig.SESSION_ID;
+      console.log(`✅ Session ID loaded from settings.js`);
     }
   }
 } catch (err) {
-  // Silent fail - keep using config.js values
+  console.log(`⚠️ Using owner number from config.js`);
 }
 // ================================================================
 
@@ -694,7 +696,7 @@ async function startBot() {
 }
 
 // Start the bot
-console.log('\n╭──⌈ 🚀 STARTING NOVA MD BOT ⌋');
+console.log('\n╭──⌈ 🚀 STARTING WHATSAPP MD BOT ⌋');
 console.log('┃');
 console.log(`┃ 📦 Bot Name: ${config.botName}`);
 console.log(`┃ ⚡ Prefix: ${config.prefix}`);
