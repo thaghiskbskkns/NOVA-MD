@@ -334,6 +334,33 @@ function isChannelMessage(jid) {
   return jid.includes('@newsletter') || jid.includes('@broadcast');
 }
 
+// ---------- Helper: Download creds.json from Mega using file ID + key ----------
+async function downloadFromMega(megaIdWithKey) {
+  // megaIdWithKey format: "fileID#key"
+  // First try to use the local ./mega module (assumed to export a 'download' function)
+  try {
+    const megaModule = require('./mega');
+    if (typeof megaModule.download === 'function') {
+      console.log('📡 Using ./mega.download()');
+      const data = await megaModule.download(megaIdWithKey);
+      return data; // should be Buffer or string
+    }
+  } catch (err) {
+    console.log('📡 ./mega module not available or no download method, trying megajs...');
+  }
+
+  // Fallback: try megajs npm package
+  try {
+    const { File } = require('megajs');
+    const file = File.fromURL(`https://mega.nz/file/${megaIdWithKey}`);
+    const data = await file.downloadBuffer();
+    return data;
+  } catch (err) {
+    throw new Error(`Failed to download from Mega: ${err.message}`);
+  }
+}
+// -------------------------------------------------------------------------------
+
 // Main connection function
 async function startBot() {
   const sessionFolder = `./${config.sessionName}`;
@@ -343,26 +370,36 @@ async function startBot() {
   const SESSION_ID = config.sessionID || null;
   
   if (SESSION_ID && SESSION_ID.startsWith('NovaMd~')) {
-    try {
-      const [header, b64data] = SESSION_ID.split('~');
-
-      if (header !== 'NovaMd' || !b64data) {
-        throw new Error("❌ Invalid session format. Expected 'NovaMd~.....'");
+    const rest = SESSION_ID.slice('NovaMd~'.length);
+    
+    // Check if this is the new Mega format (contains '#')
+    if (rest.includes('#')) {
+      try {
+        console.log('📡 Session : Mega format detected, downloading creds.json...');
+        const credsData = await downloadFromMega(rest);
+        
+        if (!fs.existsSync(sessionFolder)) {
+          fs.mkdirSync(sessionFolder, { recursive: true });
+        }
+        // credsData is a Buffer; write directly
+        fs.writeFileSync(sessionFile, credsData);
+        console.log('📡 Session : ✅ Credentials restored from Mega session');
+      } catch (e) {
+        console.error('📡 Session : ❌ Error restoring Mega session:', e.message);
       }
-
-      const cleanB64 = b64data.replace('...', '');
-      const compressedData = Buffer.from(cleanB64, 'base64');
-      const decompressedData = zlib.gunzipSync(compressedData);
-
-      if (!fs.existsSync(sessionFolder)) {
-        fs.mkdirSync(sessionFolder, { recursive: true });
+    } else {
+      // Old base64 compressed format
+      try {
+        const compressedData = Buffer.from(rest, 'base64');
+        const decompressedData = zlib.gunzipSync(compressedData);
+        if (!fs.existsSync(sessionFolder)) {
+          fs.mkdirSync(sessionFolder, { recursive: true });
+        }
+        fs.writeFileSync(sessionFile, decompressedData, 'utf8');
+        console.log('📡 Session : 🔑 Retrieved from NovaMd Session (base64)');
+      } catch (e) {
+        console.error('📡 Session : ❌ Error processing NovaMd session:', e.message);
       }
-
-      fs.writeFileSync(sessionFile, decompressedData, 'utf8');
-      console.log('📡 Session : 🔑 Retrieved from NovaMd Session');
-
-    } catch (e) {
-      console.error('📡 Session : ❌ Error processing NovaMd session:', e.message);
     }
   } else if (SESSION_ID) {
     console.log('📡 Session : Using session ID from settings.js');
